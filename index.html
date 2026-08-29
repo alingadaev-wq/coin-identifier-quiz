@@ -137,7 +137,7 @@
   <div class="phone"><div class="screen" id="screen">
 
     <div class="topbar" id="topbar" style="opacity:0">
-      <div class="brand"><svg viewBox="0 0 24 24" fill="none" stroke="#3FF0C4" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5c0-1.4 1.3-2.5 3-2.5s3 1.1 3 2.5-1.3 2-3 2.5-3 1.1-3 2.5 1.3 2.5 3 2.5 3-1.1 3-2.5"/></svg>Coin IQ</div>
+      <div class="brand"><svg viewBox="0 0 24 24" fill="none" stroke="#3FF0C4" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5c0-1.4 1.3-2.5 3-2.5s3 1.1 3 2.5-1.3 2-3 2.5-3 1.1-3 2.5 1.3 2.5 3 2.5 3-1.1 3-2.5"/></svg>Coin Identifier</div>
       <div class="dots" id="dots"><div class="dot" data-i="0"></div><div class="dot" data-i="1"></div></div>
     </div>
 
@@ -155,7 +155,7 @@
       <div class="iscene on" id="sc1">
         <div id="introIcon"></div>
         <div id="introH">Think you know <em>coin values</em>? 🤔</div>
-        <div id="introSub">2 real coins. Guess right — or find out.</div>
+        <div id="introSub">Coin Identifier scans any coin and tells you instantly. Beat it first?</div>
       </div>
       <button class="startbtn" id="startBtn">▶ Start the quiz</button>
       <button class="skip" id="skipBtn">Skip ▶</button>
@@ -251,22 +251,32 @@ let roundResults=[];
 function selectAnswer(i,oi,btn){
   if(answered) return; answered=true; hidePointer();
   const r = ROUNDS[i];
-  const buttons=[...document.querySelectorAll('.ans')];
   const isRight = oi===r.correct;
   roundResults[i] = isRight;
-  buttons.forEach((b,bi)=>{
-    if(bi===r.correct) b.classList.add('correct');
-    else if(bi===oi) b.classList.add('wrong');
-    else b.classList.add('dim');
-    b.querySelector('.mark').textContent = bi===r.correct ? '✓' : (bi===oi ? '✗' : '');
-  });
-  const card=$('photoCard');
-  if(isRight){ score++; card.classList.add('pulse'); sfxWin(); confettiAt(card); }
-  else { card.classList.add('shake'); sfxWrong(); }
-  $('rTitle').textContent = isRight ? '✓ Correct!' : '✗ Not quite';
-  $('rSub').textContent = isRight ? r.rightSub : r.wrongSub;
+
+  /* Brief "the app is scanning" beat — makes it explicit that Coin Identifier itself
+     is what produces the answer, not just a trivia reveal. */
+  $('rTitle').textContent = '📷 Coin Identifier is scanning…';
+  $('rSub').textContent = '';
   $('resultBar').classList.add('show');
-  T(()=>{ if(i+1<ROUNDS.length){ round=i+1; buildRound(round); } else { showEnd(); } }, 2600);
+  sfxTick();
+
+  T(()=>{
+    const buttons=[...document.querySelectorAll('.ans')];
+    buttons.forEach((b,bi)=>{
+      if(bi===r.correct) b.classList.add('correct');
+      else if(bi===oi) b.classList.add('wrong');
+      else b.classList.add('dim');
+      b.querySelector('.mark').textContent = bi===r.correct ? '✓' : (bi===oi ? '✗' : '');
+    });
+    const card=$('photoCard');
+    if(isRight){ score++; card.classList.add('pulse'); sfxWin(); confettiAt(card); }
+    else { card.classList.add('shake'); sfxWrong(); }
+    $('rTitle').textContent = isRight ? '✓ You got it — Coin Identifier agrees' : '✗ Coin Identifier says: ' + r.options[r.correct];
+    $('rSub').textContent = isRight ? r.rightSub : r.wrongSub;
+  }, 650);
+
+  T(()=>{ if(i+1<ROUNDS.length){ round=i+1; buildRound(round); } else { showEnd(); } }, 3100);
 }
 
 function confettiAt(el){ const rect=el.getBoundingClientRect();
