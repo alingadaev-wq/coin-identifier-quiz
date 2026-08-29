@@ -47,6 +47,19 @@
     border:1px solid rgba(63,240,196,.22);box-shadow:0 18px 40px rgba(0,0,0,.55);background:#0c1e2a;flex:0 0 auto}
   .photocard img{width:100%;height:100%;object-fit:cover;display:block}
   .photocard .ring{position:absolute;inset:0;border-radius:26px;box-shadow:inset 0 0 0 1px rgba(63,240,196,.15)}
+  /* camera-scan overlay: makes the app's actual mechanic (point at a coin, it scans it) visible
+     during the reveal beat, instead of only being described in text */
+  .scancorner{position:absolute;width:22px;height:22px;border:3px solid #3FF0C4;opacity:0;transition:opacity .2s}
+  .photocard.scanning .scancorner{opacity:.95}
+  .sc-tl{top:8px;left:8px;border-right:none;border-bottom:none;border-radius:6px 0 0 0}
+  .sc-tr{top:8px;right:8px;border-left:none;border-bottom:none;border-radius:0 6px 0 0}
+  .sc-bl{bottom:8px;left:8px;border-right:none;border-top:none;border-radius:0 0 0 6px}
+  .sc-br{bottom:8px;right:8px;border-left:none;border-top:none;border-radius:0 0 6px 0}
+  .scanline{position:absolute;left:10px;right:10px;height:3px;top:8px;border-radius:3px;opacity:0;
+    background:linear-gradient(90deg,rgba(63,240,196,0),#3FF0C4,rgba(63,240,196,0));
+    box-shadow:0 0 10px 2px rgba(63,240,196,.7)}
+  .photocard.scanning .scanline{opacity:1;animation:scansweep .65s ease-in-out infinite}
+  @keyframes scansweep{0%,100%{top:8px}50%{top:calc(100% - 14px)}}
   .photocard.shake{animation:shake .4s ease}
   @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(4px)}}
   .photocard.pulse{animation:pulse .5s ease}
@@ -144,7 +157,12 @@
     <div class="quizwrap" id="quizWrap">
       <div class="qlabel" id="qLabel">ROUND 1 OF 2</div>
       <div class="qtitle" id="qTitle"></div>
-      <div class="photocard" id="photoCard"><img id="photoImg" src="" alt=""><div class="ring"></div></div>
+      <div class="photocard" id="photoCard"><img id="photoImg" src="" alt="">
+        <div class="ring"></div>
+        <div class="scancorner sc-tl"></div><div class="scancorner sc-tr"></div>
+        <div class="scancorner sc-bl"></div><div class="scancorner sc-br"></div>
+        <div class="scanline"></div>
+      </div>
       <div class="answers" id="answers"></div>
       <div class="resultbar" id="resultBar"><div class="rtitle" id="rTitle"></div><div class="rsub" id="rSub"></div></div>
     </div>
@@ -254,14 +272,18 @@ function selectAnswer(i,oi,btn){
   const isRight = oi===r.correct;
   roundResults[i] = isRight;
 
-  /* Brief "the app is scanning" beat — makes it explicit that Coin Identifier itself
-     is what produces the answer, not just a trivia reveal. */
+  /* Visible "the app is scanning" beat: an actual scan-ring + sweeping laser line over the
+     coin photo, not just a text claim — makes the real mechanic (point at a coin, it scans it)
+     unmistakable. */
+  const card=$('photoCard');
+  card.classList.add('scanning');
   $('rTitle').textContent = '📷 Coin Identifier is scanning…';
   $('rSub').textContent = '';
   $('resultBar').classList.add('show');
   sfxTick();
 
   T(()=>{
+    card.classList.remove('scanning');
     const buttons=[...document.querySelectorAll('.ans')];
     buttons.forEach((b,bi)=>{
       if(bi===r.correct) b.classList.add('correct');
@@ -269,14 +291,13 @@ function selectAnswer(i,oi,btn){
       else b.classList.add('dim');
       b.querySelector('.mark').textContent = bi===r.correct ? '✓' : (bi===oi ? '✗' : '');
     });
-    const card=$('photoCard');
     if(isRight){ score++; card.classList.add('pulse'); sfxWin(); confettiAt(card); }
     else { card.classList.add('shake'); sfxWrong(); }
     $('rTitle').textContent = isRight ? '✓ You got it — Coin Identifier agrees' : '✗ Coin Identifier says: ' + r.options[r.correct];
     $('rSub').textContent = isRight ? r.rightSub : r.wrongSub;
-  }, 650);
+  }, 1000);
 
-  T(()=>{ if(i+1<ROUNDS.length){ round=i+1; buildRound(round); } else { showEnd(); } }, 3100);
+  T(()=>{ if(i+1<ROUNDS.length){ round=i+1; buildRound(round); } else { showEnd(); } }, 3400);
 }
 
 function confettiAt(el){ const rect=el.getBoundingClientRect();
